@@ -17,7 +17,7 @@ from delayed_signals import *
 
 SERIAL_PORT                         = '/dev/ttyUSB0'
 
-EDB_INTERFACE_FILE = "edb.json"
+EDB_INTERFACE_FILE = os.path.join(os.path.dirname(__file__), "edb.json")
 
 UART_LOG_FILE   = open("uart.log", "wb")
 
