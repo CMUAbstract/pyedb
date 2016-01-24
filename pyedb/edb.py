@@ -795,7 +795,7 @@ class WispMonitor:
 
         csv_header = "timestamp_sec," + ",".join(map(lambda s: stream_headers[s](s), streams)) + "\n"
 
-        with DelayedSignals(interrupt_signals): # prevent partial lines
+        with delayed_signals.DelayedSignals(interrupt_signals): # prevent partial lines
             out_file.write(csv_header)
 
         STREAM_STATE_STREAMING = 0
