@@ -113,7 +113,7 @@ class PacketParseException(Exception):
     def __init__(self, msg=""):
         self.message = msg
 
-class WispMonitor:
+class EDB:
     VDD                                 = VDD # V
     CMP_VREF                            = 2.5
     CMP_BITS                            = 5
