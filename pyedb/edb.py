@@ -12,7 +12,7 @@ import time
 import json
 from binascii import hexlify
 
-from delayed_signals import *
+from . import delayed_signals
 
 SERIAL_PORT                         = '/dev/ttyUSB0'
 
