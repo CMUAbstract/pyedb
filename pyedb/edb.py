@@ -10,6 +10,7 @@ import errno
 import select
 import time
 import json
+import signal
 from binascii import hexlify
 
 from . import delayed_signals
