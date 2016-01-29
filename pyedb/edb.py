@@ -862,7 +862,7 @@ class EDB:
                                     line += stream_formaters[stream](data_point.value_set[stream])
                             line += "\n"
 
-                            with DelayedSignals(interrupt_signals): # prevent partial lines
+                            with delayed_signals.DelayedSignals(interrupt_signals): # prevent partial lines
                                 out_file.write(line)
 
                             num_samples += 1
