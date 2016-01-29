@@ -1,5 +1,8 @@
 # WISP Monitor Python Class
 
+# Compatibility with Python 2.6
+from __future__ import print_function
+
 import serial
 import math
 import time
