@@ -888,7 +888,7 @@ class EDB:
                     elif stream_state == STREAM_STATE_TERMINATED:
                         break
 
-                except KeyboardInterrupt:
+                except (KeyboardInterrupt, serial.SerialException):
                     signal_handler_data['stream_state'] = STREAM_STATE_TERMINATE_REQUEST
                     # loop around
 
