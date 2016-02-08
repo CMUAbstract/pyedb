@@ -120,7 +120,7 @@ class EDB:
     CMP_BITS                            = 5
 
     def __init__(self, uart_log_fname=None):
-        self.uart_log = open(uart_log_fname, "wb")
+        self.uart_log = open(uart_log_fname, "wb") if uart_log_fname else None
         self.rxPkt = RxPkt()
 
         baudrate = config_header.macros['CONFIG_USB_UART_BAUDRATE']
