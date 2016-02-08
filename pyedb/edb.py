@@ -22,8 +22,6 @@ SERIAL_PORT                         = '/dev/ttyUSB0'
 
 EDB_INTERFACE_FILE = os.path.join(os.path.dirname(__file__), "edb.json")
 
-UART_LOG_FILE   = open("uart.log", "wb")
-
 REPORT_STREAM_PROGRESS_INTERVAL = 0.2 # sec
 
 # Packet construction states
@@ -121,7 +119,8 @@ class EDB:
     CMP_VREF                            = 2.5
     CMP_BITS                            = 5
 
-    def __init__(self):
+    def __init__(self, uart_log_fname=None):
+        self.uart_log = open(uart_log_fname, "wb")
         self.rxPkt = RxPkt()
 
         baudrate = config_header.macros['CONFIG_USB_UART_BAUDRATE']
@@ -463,8 +462,9 @@ class EDB:
 
         if len(newData) > 0:
             newBytes = bytearray(newData)
-            UART_LOG_FILE.write(newBytes)
-            UART_LOG_FILE.flush()
+            if self.uart_log:
+                self.uart_log.write(newBytes)
+                self.uart_log.flush()
             self.rcv_buf.extend(newBytes)
             self.stream_bytes += len(newData)
         return None
