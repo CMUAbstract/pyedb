@@ -119,12 +119,12 @@ class EDB:
     CMP_VREF                            = 2.5
     CMP_BITS                            = 5
 
-    def __init__(self, uart_log_fname=None):
+    def __init__(self, device, uart_log_fname=None):
         self.uart_log = open(uart_log_fname, "wb") if uart_log_fname else None
         self.rxPkt = RxPkt()
 
         baudrate = config_header.macros['CONFIG_USB_UART_BAUDRATE']
-        self.serial = serial.Serial(port=SERIAL_PORT, baudrate=baudrate, timeout=1)
+        self.serial = serial.Serial(port=device, baudrate=baudrate, timeout=1)
 
         self.serial.close()
         self.serial.open()
