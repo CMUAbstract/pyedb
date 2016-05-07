@@ -114,6 +114,120 @@ class PacketParseException(Exception):
     def __init__(self, msg=""):
         self.message = msg
 
+class UIntValue:
+    """An value of type unsigned int representable on the remote side (EDB)"""
+    def __init__(self, value):
+        self.value = value
+
+    def from_string(s):
+        return UIntValue(int(s))
+
+    def __repr__(self):
+        return repr(self.value)
+
+    def to_edb_repr(self):
+        return self.value
+
+    def from_edb_repr(val):
+        return UIntValue(self.value)
+
+    def serialize(self):
+        return serialize_uint16(self.to_edb_repr())
+    def deserialize(data):
+        return UIntValue.from_edb_repr(deserialize_uint16(data))
+
+class VoltageValue:
+    """An voltage representable on the remote side (EDB)"""
+
+    def __init__(self, voltage_v, edb_repr=None):
+        self.voltage_v = voltage_v
+        self.edb_repr = edb_repr
+
+    def from_string(s):
+        voltage_re = r'(?P<value>[0-9.]+)(?P<mult>m?)(?P<unit>(v|V))?'
+        m = re.match(voltage_re, s)
+        if not m:
+            raise Exception("Failed to parse voltage value '" + str(s) + "': " +
+                            "expecting match to regexp '" + voltage_re + "'")
+
+        voltage_v = float(m.group('value'))
+        mult = m.group('mult')
+        if mult == "m":
+            voltage_v /= 1000
+
+        return VoltageValue(voltage_v)
+
+    def __repr__(self):
+        return repr(self.voltage_v) + "V"
+
+    def to_edb_repr(self, edb):
+        if self.edb_repr is not None:
+            return self.edb_repr
+        return edb.voltage_to_adc(self.voltage_v)
+
+    def from_edb_repr(edb, val):
+        return VoltageValue(edb.adc_to_voltage(val), edb_repr=val)
+
+    def serialize(self, edb):
+        return serialize_uint16(self.to_edb_repr(edb))
+    def deserialize(edb, data):
+        return VoltageValue.from_edb_repr(edb, deserialize_uint16(data))
+
+class TimeValue:
+    """An abstract base for time value representable on the remote side (EDB)"""
+
+    def __init__(self, time_s):
+        self.time_s = time_s
+
+    def parse(s):
+
+        voltage_re = r'(?P<value>[0-9.]+)(?P<mult>m?)(?P<unit>(s|sec|S))?'
+        m = re.match(voltage_re, s)
+        if not m:
+            raise Exception("Failed to parse voltage value '" + str(s) + "': " +
+                            "expecting match to regexp '" + voltage_re + "'")
+
+        time_s = float(m.group('value'))
+        mult = m.group('mult')
+        if mult == "m":
+            time_s /= 1000
+        elif mult == "u":
+            time_s /= 1000000
+
+        return time_s
+
+    def __repr__(self):
+        return repr(self.time_s) + "s"
+
+class McuKCyclesTimeValue(TimeValue):
+    """A time value represented on the remote side (EDB) in MCU clock cycles"""
+
+    def __init__(self, time_s, edb_repr=None):
+        TimeValue.__init__(self, time_s)
+
+        self.edb_repr = edb_repr
+
+    def from_string(s):
+        return McuKCyclesTimeValue(TimeValue.parse(s))
+
+    def to_edb_repr(self, edb):
+        if self.edb_repr is not None:
+            return self.edb_repr
+        return edb.sec_to_mcu_cycles(self.time_s) / 1000
+
+    def from_edb_repr(edb, val):
+        return McuKCyclesTimeValue(edb.mcu_cycles_to_sec(val * 1000), edb_repr=val)
+
+    def serialize(self, edb):
+        return serialize_uint16(self.to_edb_repr(edb))
+    def deserialize(edb, data):
+        return McuKCyclesTimeValue.from_edb_repr(edb, deserialize_uint16(data))
+
+class Param:
+    def __init__(self, key, type):
+        self.key = key
+        self.type = type
+
 class EDB:
     VDD                                 = VDD # V
     CMP_VREF                            = 2.5
@@ -142,12 +256,10 @@ class EDB:
                 "WATCHPOINTS": self.decode_watchpoint_event,
         }
 
-        self.param_serializers = {
-                "TEST_PARAM": serialize_uint16,
-        }
-
-        self.param_deserializers = {
-                "TEST_PARAM": deserialize_uint16,
+        self.remote_params = {
+                "TEST": Param("PARAM_TEST", UIntValue),
+                "TARGET_BOOT_VOLTAGE" : Param("TARGET_BOOT_VOLTAGE_DL", VoltageValue),
+                "TARGET_BOOT_LATENCY" : Param("TARGET_BOOT_LATENCY_KCYCLES", McuKCyclesTimeValue),
         }
 
         def clk_source_freq(source):
@@ -195,21 +307,31 @@ class EDB:
         self.params[param] = value
         return value
 
+    def get_remote_param_type(self, param):
+        return self.remote_params[param.upper()].type
+
     def set_remote_param(self, param, value):
         param = param.upper()
-        param_id = host_comm_header.enums['PARAM'][param]
-        cmd_data = [param_id & 0xff, (param_id>> 8) & 0xff] + self.param_serializers[param](value)
+        param_def = self.remote_params[param]
+
+        if type(value) != param_def.type:
+            raise Exception("Type mismatch for param '" + param + "': " + \
+                    type(value) + "(expecting " + param_def.type + ")")
+
+        param_id = host_comm_header.enums['PARAM'][param_def.key]
+        cmd_data = [param_id & 0xff, (param_id>> 8) & 0xff] + value.serialize(self)
         self.sendCmd(host_comm_header.enums['USB_CMD']['SET_PARAM'], data=cmd_data)
         reply = self.receive_reply(host_comm_header.enums['USB_RSP']['PARAM'])
-        return self.param_deserializers[param](reply["value"])
+        return param_def.type.deserialize(self, reply["value"])
 
     def get_remote_param(self, param):
         param = param.upper()
-        param_id = host_comm_header.enums['PARAM'][param]
+        param_def = self.remote_params[param]
+        param_id = host_comm_header.enums['PARAM'][param_def.key]
         cmd_data = [param_id & 0xff, (param_id>> 8) & 0xff]
         self.sendCmd(host_comm_header.enums['USB_CMD']['GET_PARAM'], data=cmd_data)
         reply = self.receive_reply(host_comm_header.enums['USB_RSP']['PARAM'])
-        return self.param_deserializers[param](reply["value"])
+        return param_def.type.deserialize(self, reply["value"])
     
     def buildRxPkt(self, buf):
         """Parses packet header and returns whether it is ready or not"""
