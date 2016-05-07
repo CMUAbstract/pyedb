@@ -638,6 +638,13 @@ class EDB:
         return reply["voltage"]
 
     def interrupt(self):
+        """Interrupt target and enter interractive debug shell
+
+           The interrupt command first waits for target regulated voltage
+           (Vreg) to rise to a specified threshold (param target_boot_voltage),
+           and then waits for a fixed interval (param target_boot_latency) for
+           the MCU to boot and start listening for EDB signals.
+        """
         self.sendCmd(host_comm_header.enums['USB_CMD']['INTERRUPT'])
         reply = self.receive_reply(host_comm_header.enums['USB_RSP']['INTERRUPTED'])
         return reply["saved_vcap"]
