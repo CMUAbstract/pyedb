@@ -158,6 +158,8 @@ class EDB:
             elif source == 'SMCLK' or re.match(r'T.SSEL__SMCLK', source):
                 return clock_config_header.macros['CONFIG_DCOCLKDIV_FREQ'] / \
                        clock_config_header.macros['CONFIG_CLK_DIV_SMCLK']
+            elif source == 'MCLK':
+                return clock_config_header.macros['CONFIG_DCOCLKDIV_FREQ']
             else:
                 raise Exception("Not implemented")
 
@@ -166,6 +168,8 @@ class EDB:
                 if config_header.macros[source_macro_prefix + source]:
                     return source
             raise Exception("Could not find a defined clk source macro for: " + source_macro_prefix)
+
+        self.MCU_CLK_FREQ = clk_source_freq('MCLK')
 
         self.TIMELOG_CLK_FREQ = clk_source_freq(config_header.macros['CONFIG_TIMELOG_TIMER_SOURCE']) / \
                 (config_header.macros['CONFIG_TIMELOG_TIMER_DIV'] * \
@@ -534,6 +538,12 @@ class EDB:
 
     def cmp_to_voltage(self, value, ref):
         return (float(value) + 1) * (COMPARATOR_REF_VOLTAGE[ref] / 2**CMP_BITS)
+
+    def sec_to_mcu_cycles(time_ms):
+        return int(self.MCU_CLK_FREQ * (time_ms / 1000))
+
+    def mcu_cycles_to_sec(self, cycles):
+        return float(cycles) / self.MCU_CLK_FREQ
 
     def decode_adc_value(self, bytes, offset):
         FIELD_LEN = 2
