@@ -1,40 +1,81 @@
 {
-  "clock_config_header": {
-    "enums": {},
-    "macros": {
-      "CONFIG_CLK_DIV_SMCLK": 1,
-      "CONFIG_DCOCLKDIV_FREQ": 24000000,
-      "CONFIG_REFO_FREQ": 32768,
-      "CONFIG_XT1_FREQ": 32768
-    }
-  },
-  "VDD": 2.985,
-  "COMPARATOR_REF_VOLTAGE": {
-    "VREF_2_0": 2.0,
-    "VREF_2_5": 2.5,
-    "VREF_1_5": 1.5,
-    "VCC": 2.985
-  },
-  "target_comm_header": {
-    "enums": {
-      "INTERRUPT_TYPE": {
-        "NONE": 0,
-        "DEBUGGER_REQ": 1,
-        "TARGET_REQ": 2,
-        "BREAKPOINT": 3,
-        "ENERGY_BREAKPOINT": 4,
-        "ENERGY_GUARD": 5,
-        "ASSERT": 6,
-        "BOOT": 7
-      }
-    },
-    "macros": {}
-  },
   "host_comm_header": {
+    "macros": {
+      "UART_IDENTIFIER_USB": 240
+    },
     "enums": {
-      "INTERRUPT_SOURCE": {
-        "DEBUGGER": 0,
-        "TARGET": 1
+      "BREAKPOINT_TYPE": {
+        "PASSIVE": 0,
+        "INTERNAL": 1,
+        "EXTERNAL": 2,
+        "BOOT": 3
+      },
+      "RF_EVENT": {
+        "INVALID": 0,
+        "CMD_QUERYREP": 256,
+        "CMD_ACK": 320,
+        "CMD_QUERY": 384,
+        "CMD_QUERYADJUST": 400,
+        "CMD_SELECT": 416,
+        "CMD_NAK": 448,
+        "CMD_REQRN": 449,
+        "CMD_READ": 450,
+        "CMD_WRITE": 451,
+        "CMD_KILL": 452,
+        "CMD_LOCK": 453,
+        "CMD_ACCESS": 454,
+        "CMD_BLOCKWRITE": 455,
+        "CMD_BLOCKERASE": 456,
+        "CMD_BLOCKPERMALOCK": 457,
+        "CMD_READBUFFER": 466,
+        "CMD_FILEOPEN": 467,
+        "CMD_CHALLENGE": 468,
+        "CMD_AUTHENTICATE": 469,
+        "CMD_SECURECOMM": 470,
+        "CMD_AUTHCOMM": 471,
+        "RSP_GENERIC": 512,
+        "ERR_BAD_DELIM": 3585,
+        "ERR_RT_CAL": 3586,
+        "ERR_TR_CAL": 3587
+      },
+      "CMP_REF": {
+        "VCC": 0,
+        "VREF_2_5": 1,
+        "VREF_2_0": 2,
+        "VREF_1_5": 3
+      },
+      "USB_RSP": {
+        "VOLTAGE": 1,
+        "VOLTAGES": 2,
+        "SET_POWER_COMPLETE": 4,
+        "RELEASE_POWER_COMPLETE": 5,
+        "ADDRESS": 6,
+        "WISP_MEMORY": 7,
+        "STREAM_EVENTS": 8,
+        "STREAM_VOLTAGES": 9,
+        "UART_WISP_TO_MONITOR": 10,
+        "UART_MONITOR_TO_WISP": 11,
+        "TAG_PWR": 12,
+        "TIME": 13,
+        "VINJ": 14,
+        "RETURN_CODE": 15,
+        "INTERRUPTED": 16,
+        "ECHO": 17,
+        "STDIO": 18,
+        "WATCHPOINT": 19,
+        "PARAM": 20,
+        "ENERGY_PROFILE": 21
+      },
+      "ENERGY_BREAKPOINT_IMPL": {
+        "ADC": 0,
+        "CMP": 1
+      },
+      "RETURN_CODE": {
+        "SUCCESS": 0,
+        "INVALID_ARGS": 1,
+        "BUFFER_TOO_SMALL": 2,
+        "COMM_ERROR": 3,
+        "UNSUPPORTED": 4
       },
       "USB_CMD": {
         "SENSE": 1,
@@ -81,45 +122,6 @@
         "GET_PARAM": 69,
         "PERIODIC_PAYLOAD": 70
       },
-      "CMP_REF": {
-        "VCC": 0,
-        "VREF_2_5": 1,
-        "VREF_2_0": 2,
-        "VREF_1_5": 3
-      },
-      "ENERGY_BREAKPOINT_IMPL": {
-        "ADC": 0,
-        "CMP": 1
-      },
-      "ADC_CHAN_INDEX": {
-        "VCAP": 0,
-        "VBOOST": 1,
-        "VREG": 2,
-        "VRECT": 3,
-        "VINJ": 4
-      },
-      "USB_RSP": {
-        "VOLTAGE": 1,
-        "VOLTAGES": 2,
-        "SET_POWER_COMPLETE": 4,
-        "RELEASE_POWER_COMPLETE": 5,
-        "ADDRESS": 6,
-        "WISP_MEMORY": 7,
-        "STREAM_EVENTS": 8,
-        "STREAM_VOLTAGES": 9,
-        "UART_WISP_TO_MONITOR": 10,
-        "UART_MONITOR_TO_WISP": 11,
-        "TAG_PWR": 12,
-        "TIME": 13,
-        "VINJ": 14,
-        "RETURN_CODE": 15,
-        "INTERRUPTED": 16,
-        "ECHO": 17,
-        "STDIO": 18,
-        "WATCHPOINT": 19,
-        "PARAM": 20,
-        "ENERGY_PROFILE": 21
-      },
       "STREAM": {
         "VCAP": 1,
         "VBOOST": 2,
@@ -129,66 +131,66 @@
         "RF_EVENTS": 32,
         "WATCHPOINTS": 64
       },
+      "INTERRUPT_SOURCE": {
+        "DEBUGGER": 0,
+        "TARGET": 1
+      },
+      "ADC_CHAN_INDEX": {
+        "VCAP": 0,
+        "VBOOST": 1,
+        "VREG": 2,
+        "VRECT": 3,
+        "VINJ": 4
+      },
       "PARAM": {
-        "TEST": 0
-      },
-      "RETURN_CODE": {
-        "SUCCESS": 0,
-        "INVALID_ARGS": 1,
-        "BUFFER_TOO_SMALL": 2,
-        "COMM_ERROR": 3,
-        "UNSUPPORTED": 4
-      },
-      "RF_EVENT": {
-        "INVALID": 0,
-        "CMD_QUERYREP": 256,
-        "CMD_ACK": 320,
-        "CMD_QUERY": 384,
-        "CMD_QUERYADJUST": 400,
-        "CMD_SELECT": 416,
-        "CMD_NAK": 448,
-        "CMD_REQRN": 449,
-        "CMD_READ": 450,
-        "CMD_WRITE": 451,
-        "CMD_KILL": 452,
-        "CMD_LOCK": 453,
-        "CMD_ACCESS": 454,
-        "CMD_BLOCKWRITE": 455,
-        "CMD_BLOCKERASE": 456,
-        "CMD_BLOCKPERMALOCK": 457,
-        "CMD_READBUFFER": 466,
-        "CMD_FILEOPEN": 467,
-        "CMD_CHALLENGE": 468,
-        "CMD_AUTHENTICATE": 469,
-        "CMD_SECURECOMM": 470,
-        "CMD_AUTHCOMM": 471,
-        "RSP_GENERIC": 512,
-        "ERR_BAD_DELIM": 3585,
-        "ERR_RT_CAL": 3586,
-        "ERR_TR_CAL": 3587
-      },
-      "BREAKPOINT_TYPE": {
-        "PASSIVE": 0,
-        "INTERNAL": 1,
-        "EXTERNAL": 2,
-        "BOOT": 3
+        "TEST": 0,
+        "TARGET_BOOT_VOLTAGE_DL": 1,
+        "TARGET_BOOT_LATENCY_KCYCLES": 2
       }
-    },
+    }
+  },
+  "VDD": 2.985,
+  "clock_config_header": {
     "macros": {
-      "UART_IDENTIFIER_USB": 240
+      "CONFIG_REFO_FREQ": 32768,
+      "CONFIG_DCOCLKDIV_FREQ": 24000000,
+      "CONFIG_XT1_FREQ": 32768,
+      "CONFIG_CLK_DIV_SMCLK": 1
+    },
+    "enums": {}
+  },
+  "target_comm_header": {
+    "macros": {},
+    "enums": {
+      "INTERRUPT_TYPE": {
+        "NONE": 0,
+        "DEBUGGER_REQ": 1,
+        "TARGET_REQ": 2,
+        "BREAKPOINT": 3,
+        "ENERGY_BREAKPOINT": 4,
+        "ENERGY_GUARD": 5,
+        "ASSERT": 6,
+        "BOOT": 7
+      }
     }
   },
   "config_header": {
-    "enums": {},
     "macros": {
-      "CONFIG_TIMELOG_TIMER_DIV_EX": 1,
       "CONFIG_TIMELOG_TIMER_SOURCE": "TASSEL__SMCLK",
+      "CONFIG_ADC_TIMER_SOURCE_SMCLK": true,
       "CONFIG_TIMELOG_TIMER_DIV": 8,
-      "CONFIG_ADC_TIMER_SOURCE_ACLK": null,
-      "CONFIG_USB_UART_BAUDRATE": 2000000,
-      "CONFIG_ADC_TIMER_SOURCE_MCLK": null,
+      "CONFIG_TIMELOG_TIMER_DIV_EX": 1,
       "CONFIG_ADC_TIMER_DIV": 8,
-      "CONFIG_ADC_TIMER_SOURCE_SMCLK": true
-    }
+      "CONFIG_ADC_TIMER_SOURCE_MCLK": null,
+      "CONFIG_USB_UART_BAUDRATE": 2000000,
+      "CONFIG_ADC_TIMER_SOURCE_ACLK": null
+    },
+    "enums": {}
+  },
+  "COMPARATOR_REF_VOLTAGE": {
+    "VREF_2_0": 2.0,
+    "VCC": 2.985,
+    "VREF_2_5": 2.5,
+    "VREF_1_5": 1.5
   }
 }
