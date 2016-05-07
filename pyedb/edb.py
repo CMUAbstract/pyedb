@@ -167,10 +167,10 @@ class EDB:
                     return source
             raise Exception("Could not find a defined clk source macro for: " + source_macro_prefix)
 
-        self.CLK_FREQ = clk_source_freq(config_header.macros['CONFIG_TIMELOG_TIMER_SOURCE']) / \
+        self.TIMELOG_CLK_FREQ = clk_source_freq(config_header.macros['CONFIG_TIMELOG_TIMER_SOURCE']) / \
                 (config_header.macros['CONFIG_TIMELOG_TIMER_DIV'] * \
                 config_header.macros['CONFIG_TIMELOG_TIMER_DIV_EX'])
-        self.CLK_PERIOD = 1.0 / self.CLK_FREQ # seconds
+        self.TIMELOG_PERIOD = 1.0 / self.TIMELOG_CLK_FREQ # seconds
 
         adc_trigger_timer_clk_source = clk_source('CONFIG_ADC_TIMER_SOURCE_')
         self.ADC_TRIGGER_TIMER_CLK_FREQ = \
@@ -280,7 +280,7 @@ class EDB:
             elif self.rxPkt.descriptor == host_comm_header.enums['USB_RSP']['TIME']:
                 cycles = (self.rxPkt.data[3] << 24) | (self.rxPkt.data[2] << 16) | \
                          (self.rxPkt.data[1] <<  8) | (self.rxPkt.data[0])
-                pkt["time_sec"] = float(cycles) * self.CLK_PERIOD
+                pkt["time_sec"] = float(cycles) * self.TIMELOG_PERIOD
 
             elif self.rxPkt.descriptor == host_comm_header.enums['USB_RSP']['VOLTAGE']:
                 adc_reading = (self.rxPkt.data[1] << 8) | self.rxPkt.data[0]
@@ -855,7 +855,7 @@ class EDB:
                             # #### 32-bit timestamp
                             timestamp_cycles = data_point.timestamp_cycles
 
-                            timestamp_sec = float(timestamp_cycles) * self.CLK_PERIOD
+                            timestamp_sec = float(timestamp_cycles) * self.TIMELOG_PERIOD
 
                             line = "%f" % timestamp_sec
                             for stream in streams:
