@@ -303,6 +303,9 @@ class EDB:
     def destroy(self):
         self.serial.close()
 
+    def get_local_param(self, param):
+        return self.params[param]
+
     def set_local_param(self, param, value):
         self.params[param] = value
         return value
