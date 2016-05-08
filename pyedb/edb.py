@@ -990,51 +990,49 @@ class EDB:
                                     host_comm_header.enums['USB_RSP']['STDIO']
                                 ], timeout=1)
 
-                    if pkt is None:
-                        continue
+                    if pkt is not None:
 
-                    if pkt["descriptor"] == host_comm_header.enums['USB_RSP']['STDIO']:
-                        continue
+                        if pkt["descriptor"] == host_comm_header.enums['USB_RSP']['STDIO']:
+                            continue
 
-                    for data_point in pkt["data_points"]:
+                        for data_point in pkt["data_points"]:
 
-                        # #### 16-bit timestamp
-                        # Detect overflow by watching for timestamp to decrease
-                        # NOTE: each pkt type has it's own time since the samples
-                        # in two packets of different types, which (the packets)
-                        # are transmitted one after another, may be interleaved.
-                        #if data_point.timestamp_cycles < prev_timestamp_cycles[pkt['descriptor']]:
-                        #    overflow_timestamp_cycles[pkt['descriptor']] += 1 << 16;
-                        #prev_timestamp_cycles[pkt['descriptor']] = data_point.timestamp_cycles
+                            # #### 16-bit timestamp
+                            # Detect overflow by watching for timestamp to decrease
+                            # NOTE: each pkt type has it's own time since the samples
+                            # in two packets of different types, which (the packets)
+                            # are transmitted one after another, may be interleaved.
+                            #if data_point.timestamp_cycles < prev_timestamp_cycles[pkt['descriptor']]:
+                            #    overflow_timestamp_cycles[pkt['descriptor']] += 1 << 16;
+                            #prev_timestamp_cycles[pkt['descriptor']] = data_point.timestamp_cycles
 
-                        # Count beyond 16 bits
-                        #timestamp_cycles = overflow_timestamp_cycles[pkt['descriptor']] + \
-                        #                        data_point.timestamp_cycles
+                            # Count beyond 16 bits
+                            #timestamp_cycles = overflow_timestamp_cycles[pkt['descriptor']] + \
+                            #                        data_point.timestamp_cycles
 
-                        # #### 32-bit timestamp
-                        timestamp_cycles = data_point.timestamp_cycles
+                            # #### 32-bit timestamp
+                            timestamp_cycles = data_point.timestamp_cycles
 
-                        timestamp_sec = float(timestamp_cycles) * self.TIMELOG_PERIOD
+                            timestamp_sec = float(timestamp_cycles) * self.TIMELOG_PERIOD
 
-                        line = "%f" % timestamp_sec
-                        for stream in streams:
-                            # a column per requested stream, so may have blanks on some rows
-                            line += ","
-                            if stream in data_point.value_set:
-                                line += stream_formaters[stream](data_point.value_set[stream])
-                        line += "\n"
+                            line = "%f" % timestamp_sec
+                            for stream in streams:
+                                # a column per requested stream, so may have blanks on some rows
+                                line += ","
+                                if stream in data_point.value_set:
+                                    line += stream_formaters[stream](data_point.value_set[stream])
+                            line += "\n"
 
-                        with delayed_signals.DelayedSignals(interrupt_signals): # prevent partial lines
-                            out_file.write(line)
+                            with delayed_signals.DelayedSignals(interrupt_signals): # prevent partial lines
+                                out_file.write(line)
 
-                        num_samples += 1
+                            num_samples += 1
 
-                    now = time.time()
-                    if not silent and now - last_progress_report > REPORT_STREAM_PROGRESS_INTERVAL:
-                        print("\r%d samples @ %.2f KB/s" % (num_samples, self.stream_datarate_kbps()), end='')
-                        sys.stdout.flush()
-                        last_progress_report = now
-
+                        now = time.time()
+                        if not silent and now - last_progress_report > REPORT_STREAM_PROGRESS_INTERVAL:
+                            print("\r%d samples @ %.2f KB/s" % (num_samples, self.stream_datarate_kbps()), end='')
+                            sys.stdout.flush()
+                            last_progress_report = now
 
                     if stream_state == STREAM_STATE_TERMINATING:
                         signal_handler_data['stream_state'] = STREAM_STATE_TERMINATED
