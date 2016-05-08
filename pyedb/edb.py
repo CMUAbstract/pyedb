@@ -948,92 +948,96 @@ class EDB:
         # Can't modify a variable in this scope, but can modify values in a dict
         signal_handler_data = {'stream_state' : STREAM_STATE_STREAMING}
 
+        def interrupt_loop(sig, frame):
+            signal_handler_data['stream_state'] = STREAM_STATE_TERMINATE_REQUEST
+
         if duration_sec is not None:
             # The main point here is to cause the read system call to return
 
-            def interrupt_loop(sig, frame):
-                signal_handler_data['stream_state'] = STREAM_STATE_TERMINATE_REQUEST
-
             signal.signal(signal.SIGALRM, interrupt_loop)
             signal.setitimer(signal.ITIMER_REAL, duration_sec)
-        
-            while True:
-                try:
 
-                    stream_state = signal_handler_data['stream_state']
+        time_started = time.time()
 
-                    if stream_state in [STREAM_STATE_STREAMING, STREAM_STATE_TERMINATING]:
+        while True:
+            try:
 
-                        pkt = self.receive_reply([
-                                        host_comm_header.enums['USB_RSP']['STREAM_EVENTS'],
-                                        host_comm_header.enums['USB_RSP']['STREAM_VOLTAGES'],
-                                        host_comm_header.enums['USB_RSP']['STDIO']
-                                    ], timeout=1)
+                stream_state = signal_handler_data['stream_state']
 
-                        if pkt is None:
-                            continue
+                if stream_state in [STREAM_STATE_STREAMING, STREAM_STATE_TERMINATING]:
 
-                        if pkt["descriptor"] == host_comm_header.enums['USB_RSP']['STDIO']:
-                            continue
+                    pkt = self.receive_reply([
+                                    host_comm_header.enums['USB_RSP']['STREAM_EVENTS'],
+                                    host_comm_header.enums['USB_RSP']['STREAM_VOLTAGES'],
+                                    host_comm_header.enums['USB_RSP']['STDIO']
+                                ], timeout=1)
 
-                        for data_point in pkt["data_points"]:
+                    if pkt is None:
+                        continue
 
-                            # #### 16-bit timestamp
-                            # Detect overflow by watching for timestamp to decrease
-                            # NOTE: each pkt type has it's own time since the samples
-                            # in two packets of different types, which (the packets)
-                            # are transmitted one after another, may be interleaved.
-                            #if data_point.timestamp_cycles < prev_timestamp_cycles[pkt['descriptor']]:
-                            #    overflow_timestamp_cycles[pkt['descriptor']] += 1 << 16;
-                            #prev_timestamp_cycles[pkt['descriptor']] = data_point.timestamp_cycles
+                    if pkt["descriptor"] == host_comm_header.enums['USB_RSP']['STDIO']:
+                        continue
 
-                            # Count beyond 16 bits
-                            #timestamp_cycles = overflow_timestamp_cycles[pkt['descriptor']] + \
-                            #                        data_point.timestamp_cycles
+                    for data_point in pkt["data_points"]:
 
-                            # #### 32-bit timestamp
-                            timestamp_cycles = data_point.timestamp_cycles
+                        # #### 16-bit timestamp
+                        # Detect overflow by watching for timestamp to decrease
+                        # NOTE: each pkt type has it's own time since the samples
+                        # in two packets of different types, which (the packets)
+                        # are transmitted one after another, may be interleaved.
+                        #if data_point.timestamp_cycles < prev_timestamp_cycles[pkt['descriptor']]:
+                        #    overflow_timestamp_cycles[pkt['descriptor']] += 1 << 16;
+                        #prev_timestamp_cycles[pkt['descriptor']] = data_point.timestamp_cycles
 
-                            timestamp_sec = float(timestamp_cycles) * self.TIMELOG_PERIOD
+                        # Count beyond 16 bits
+                        #timestamp_cycles = overflow_timestamp_cycles[pkt['descriptor']] + \
+                        #                        data_point.timestamp_cycles
 
-                            line = "%f" % timestamp_sec
-                            for stream in streams:
-                                # a column per requested stream, so may have blanks on some rows
-                                line += ","
-                                if stream in data_point.value_set:
-                                    line += stream_formaters[stream](data_point.value_set[stream])
-                            line += "\n"
+                        # #### 32-bit timestamp
+                        timestamp_cycles = data_point.timestamp_cycles
 
-                            with delayed_signals.DelayedSignals(interrupt_signals): # prevent partial lines
-                                out_file.write(line)
+                        timestamp_sec = float(timestamp_cycles) * self.TIMELOG_PERIOD
 
-                            num_samples += 1
+                        line = "%f" % timestamp_sec
+                        for stream in streams:
+                            # a column per requested stream, so may have blanks on some rows
+                            line += ","
+                            if stream in data_point.value_set:
+                                line += stream_formaters[stream](data_point.value_set[stream])
+                        line += "\n"
 
-                        now = time.time()
-                        if not silent and now - last_progress_report > REPORT_STREAM_PROGRESS_INTERVAL:
-                            print("\r%d samples @ %.2f KB/s" % (num_samples, self.stream_datarate_kbps()), end='')
-                            sys.stdout.flush()
-                            last_progress_report = now
+                        with delayed_signals.DelayedSignals(interrupt_signals): # prevent partial lines
+                            out_file.write(line)
+
+                        num_samples += 1
+
+                    now = time.time()
+                    if not silent and now - last_progress_report > REPORT_STREAM_PROGRESS_INTERVAL:
+                        print("\r%d samples @ %.2f KB/s" % (num_samples, self.stream_datarate_kbps()), end='')
+                        sys.stdout.flush()
+                        last_progress_report = now
 
 
-                        if stream_state == STREAM_STATE_TERMINATING:
-                            signal_handler_data['stream_state'] = STREAM_STATE_TERMINATED
+                    if stream_state == STREAM_STATE_TERMINATING:
+                        signal_handler_data['stream_state'] = STREAM_STATE_TERMINATED
 
-                    elif stream_state == STREAM_STATE_TERMINATE_REQUEST:
-                        self.stream_end(streams_bitmask)
-                        signal_handler_data['stream_state'] = STREAM_STATE_TERMINATING
-                        # loop once more to get the left-overs: partially full buffer
+                elif stream_state == STREAM_STATE_TERMINATE_REQUEST:
+                    self.stream_end(streams_bitmask)
+                    signal_handler_data['stream_state'] = STREAM_STATE_TERMINATING
+                    # loop once more to get the left-overs: partially full buffer
 
-                    elif stream_state == STREAM_STATE_TERMINATED:
-                        break
+                elif stream_state == STREAM_STATE_TERMINATED:
+                    break
 
-                except (KeyboardInterrupt, serial.SerialException):
-                    signal_handler_data['stream_state'] = STREAM_STATE_TERMINATE_REQUEST
-                    # loop around
+            except (KeyboardInterrupt, serial.SerialException):
+                signal_handler_data['stream_state'] = STREAM_STATE_TERMINATE_REQUEST
+                # loop around
+
+        time_ended = time.time()
 
         if not silent:
             print() # the rolling progress report does not newline
-            print("%d samples in %f seconds" % (num_samples, duration_sec))
+            print("%d samples in %f seconds" % (num_samples, time_ended - time_started))
 
 class RxPkt():
     def __init__(self):
