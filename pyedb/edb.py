@@ -303,6 +303,9 @@ class EDB:
     def destroy(self):
         self.serial.close()
 
+    def get_local_params(self):
+        return self.params
+
     def get_local_param(self, param):
         return self.params[param]
 
@@ -704,6 +707,9 @@ class EDB:
         voltage = self.adc_to_voltage(adc_value)
         return WatchpointEvent(id, voltage), offset - starting_offset
 
+    def get_adc_channels():
+        return host_comm_header.enums['ADC_CHAN_INDEX']
+
     def sense(self, channel):
         channel_idx = host_comm_header.enums['ADC_CHAN_INDEX'][channel]
         self.sendCmd(host_comm_header.enums['USB_CMD']['SENSE'], data=[channel_idx])
@@ -788,6 +794,9 @@ class EDB:
         reply = self.receive_reply(host_comm_header.enums['USB_RSP']['INTERRUPTED'])
         return reply["saved_vcap"]
 
+    def get_breakpoint_types():
+        return host_comm_header.enums['BREAKPOINT_TYPE']
+
     def toggle_breakpoint(self, type, idx, enable, energy_level=None):
 
         if energy_level is not None:
@@ -823,6 +832,9 @@ class EDB:
             return EnergyProfile(time.time(), pkt["profile"])
         else:
             raise Exception("Unexpected pkt: " + "0x%08x" % pkt["descriptor"])
+
+    def get_interrupt_sources():
+        return host_comm_header.enums['INTERRUPT_SOURCE']
 
     def get_interrupt_context(self, source):
         self.sendCmd(host_comm_header.enums['USB_CMD']['GET_INTERRUPT_CONTEXT'], data=[host_comm_header.enums['INTERRUPT_SOURCE'][source]])
@@ -875,6 +887,9 @@ class EDB:
         cmd_data = [enable]
         self.sendCmd(host_comm_header.enums['USB_CMD']['PERIODIC_PAYLOAD'], data=cmd_data)
         self.receive_reply(host_comm_header.enums['USB_RSP']['RETURN_CODE'])
+
+    def get_streams():
+        return host_comm_header.enums['STREAM']
 
     def stream(self, streams, duration_sec=None, out_file=None, silent=True, no_parse=False):
         self.rcv_no_parse = no_parse
