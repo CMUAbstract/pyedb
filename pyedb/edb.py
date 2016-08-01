@@ -131,9 +131,9 @@ class UIntValue:
     def from_edb_repr(val):
         return UIntValue(self.value)
 
-    def serialize(self):
+    def serialize(self, edb):
         return serialize_uint16(self.to_edb_repr())
-    def deserialize(data):
+    def deserialize(data, edb):
         return UIntValue.from_edb_repr(deserialize_uint16(data))
 
 class VoltageValue:
