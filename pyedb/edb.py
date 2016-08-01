@@ -327,8 +327,8 @@ class EDB:
         param_id = host_comm_header.enums['PARAM'][param_def.key]
         cmd_data = [param_id & 0xff, (param_id>> 8) & 0xff] + value.serialize(self)
         self.sendCmd(host_comm_header.enums['USB_CMD']['SET_PARAM'], data=cmd_data)
-        reply = self.receive_reply(host_comm_header.enums['USB_RSP']['PARAM'])
-        return param_def.type.deserialize(self, reply["value"])
+        reply = self.receive_reply(host_comm_header.enums['USB_RSP']['RETURN_CODE'])
+        return reply["code"]
 
     def get_remote_param(self, param):
         param = param.upper()
