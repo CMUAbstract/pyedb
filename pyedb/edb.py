@@ -320,9 +320,9 @@ class EDB:
         param = param.upper()
         param_def = self.remote_params[param]
 
-        if type(value) != param_def.type:
+        if not isinstance(value, param_def.type):
             raise Exception("Type mismatch for param '" + param + "': " + \
-                    type(value) + "(expecting " + param_def.type + ")")
+                    str(type(value)) + " (expecting " + str(param_def.type) + ")")
 
         param_id = host_comm_header.enums['PARAM'][param_def.key]
         cmd_data = [param_id & 0xff, (param_id>> 8) & 0xff] + value.serialize(self)
