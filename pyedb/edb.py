@@ -260,6 +260,7 @@ class EDB:
                 "TEST": Param("PARAM_TEST", UIntValue),
                 "TARGET_BOOT_VOLTAGE" : Param("TARGET_BOOT_VOLTAGE_DL", VoltageValue),
                 "TARGET_BOOT_LATENCY" : Param("TARGET_BOOT_LATENCY_KCYCLES", McuKCyclesTimeValue),
+                "NUM_WATCHPOINT_EVENTS_BUFFERED" : Param("NUM_WATCHPOINT_EVENTS_BUFFERED", UIntValue),
         }
 
         def clk_source_freq(source):
