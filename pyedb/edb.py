@@ -441,7 +441,7 @@ class EDB:
                 pkt["vcap"] = self.adc_to_voltage(vcap_adc_reading)
 
             elif self.rxPkt.descriptor == host_comm_header.enums['USB_RSP']['STDIO']:
-                pkt["string"] = str(bytearray(self.rxPkt.data))
+                pkt["string"] = bytearray(self.rxPkt.data).decode('ascii', errors='backslashreplace')
 
             elif self.rxPkt.descriptor == host_comm_header.enums['USB_RSP']['ENERGY_PROFILE']:
                 pkt["profile"] = " ".join(["0x%x" % b for b in bytearray(self.rxPkt.data)])
