@@ -953,8 +953,8 @@ class EDB:
 
         interrupt_signals = [signal.SIGINT, signal.SIGALRM]
 
-
-        csv_header = "timestamp_sec," + ",".join(map(lambda s: stream_headers[s](s), streams)) + "\n"
+        csv_header = "host_timestamp_sec,timestamp_sec," + \
+                ",".join(map(lambda s: stream_headers[s](s), streams)) + "\n"
 
         with delayed_signals.DelayedSignals(interrupt_signals): # prevent partial lines
             out_file.write(csv_header)
@@ -996,6 +996,8 @@ class EDB:
                         if pkt["descriptor"] == host_comm_header.enums['USB_RSP']['STDIO']:
                             continue
 
+                        host_timestamp_sec = time.time() - time_started
+
                         for data_point in pkt["data_points"]:
 
                             # #### 16-bit timestamp
@@ -1016,7 +1018,7 @@ class EDB:
 
                             timestamp_sec = float(timestamp_cycles) * self.TIMELOG_PERIOD
 
-                            line = "%f" % timestamp_sec
+                            line = "%f,%f" % (host_timestamp_sec, timestamp_sec)
                             for stream in streams:
                                 # a column per requested stream, so may have blanks on some rows
                                 line += ","
