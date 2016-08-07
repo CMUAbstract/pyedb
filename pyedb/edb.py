@@ -892,7 +892,8 @@ class EDB:
     def get_streams():
         return host_comm_header.enums['STREAM']
 
-    def stream(self, streams, duration_sec=None, out_file=None, silent=True, no_parse=False):
+    def stream(self, streams, duration_sec=None, out_file=None, silent=True, no_parse=False,
+               stop_at_watchpoint=None):
         self.rcv_no_parse = no_parse
         self.rcv_no_parse_total_bytes = 0
 
@@ -1019,17 +1020,29 @@ class EDB:
                             timestamp_sec = float(timestamp_cycles) * self.TIMELOG_PERIOD
 
                             line = "%f,%f" % (host_timestamp_sec, timestamp_sec)
+                            stop_condition = False
                             for stream in streams:
+
                                 # a column per requested stream, so may have blanks on some rows
                                 line += ","
                                 if stream in data_point.value_set:
-                                    line += stream_formaters[stream](data_point.value_set[stream])
+                                    data = data_point.value_set[stream]
+                                    line += stream_formaters[stream](data)
+
+                                    if stream == 'WATCHPOINTS':
+                                        if stop_at_watchpoint is not None and data.id == stop_at_watchpoint:
+                                            stop_condition = True
+
                             line += "\n"
 
                             with delayed_signals.DelayedSignals(interrupt_signals): # prevent partial lines
                                 out_file.write(line)
 
                             num_samples += 1
+
+                            if stop_condition:
+                                signal_handler_data['stream_state'] = STREAM_STATE_TERMINATE_REQUEST
+                                break
 
                         now = time.time()
                         if not silent and now - last_progress_report > REPORT_STREAM_PROGRESS_INTERVAL:
