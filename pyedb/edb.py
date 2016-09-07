@@ -41,12 +41,10 @@ def key_lookup(d, value):
     return None
 
 def serialize_uint16(value):
-    value = int(value)
     return [value & 0xFF, (value >> 8) & 0xFF]
 
 def deserialize_uint16(bytes):
-    value = (bytes[1] << 8) | bytes[0]
-    return '%d' % value
+    return (bytes[1] << 8) | bytes[0]
 
 def serialize_frac(value):
     value = float(value)
