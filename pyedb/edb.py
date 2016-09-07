@@ -776,7 +776,11 @@ class EDB:
            the MCU to boot and start listening for EDB signals.
         """
         self.sendCmd(host_comm_header.enums['USB_CMD']['INTERRUPT'])
-        reply = self.receive_reply(host_comm_header.enums['USB_RSP']['INTERRUPTED'])
+        reply = self.receive_reply([host_comm_header.enums['USB_RSP']['INTERRUPTED'],
+                                    host_comm_header.enums['USB_RSP']['RETURN_CODE']])
+
+        # otherwise, on failing return code, receive_reply raises exception
+        assert reply["descriptor"] == host_comm_header.enums['USB_RSP']['INTERRUPTED']
         return reply["saved_vcap"]
 
     def break_at_vcap_level(self, level, impl):
