@@ -77,6 +77,9 @@ VDD = edb_iface["VDD"]
 class StreamInterrupted(Exception):
     pass
 
+class TimeoutException(Exception):
+    pass
+
 class InterruptContext:
     def __init__(self, type, id, saved_vcap=None):
         self.type = type
@@ -819,13 +822,15 @@ class EDB:
                      data=cmd_data)
         self.receive_reply(host_comm_header.enums['USB_RSP']['RETURN_CODE'])
 
-    def wait(self):
+    def wait(self, timeout=None):
         pkt = self.receive_reply([
             host_comm_header.enums['USB_RSP']['INTERRUPTED'],
             host_comm_header.enums['USB_RSP']['WATCHPOINT'],
             host_comm_header.enums['USB_RSP']['STDIO'],
             host_comm_header.enums['USB_RSP']['ENERGY_PROFILE']
-        ])
+        ], timeout=timeout)
+        if pkt is None:
+            raise TimeoutException()
         desc = pkt["descriptor"]
         if desc == host_comm_header.enums['USB_RSP']['INTERRUPTED']:
             return InterruptContext(pkt["interrupt_type"], pkt["interrupt_id"], pkt["saved_vcap"])
