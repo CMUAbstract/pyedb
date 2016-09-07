@@ -666,8 +666,8 @@ class EDB:
     def cmp_to_voltage(self, value, ref):
         return (float(value) + 1) * (COMPARATOR_REF_VOLTAGE[ref] / 2**CMP_BITS)
 
-    def sec_to_mcu_cycles(time_ms):
-        return int(self.MCU_CLK_FREQ * (time_ms / 1000))
+    def sec_to_mcu_cycles(self, time_s):
+        return int(self.MCU_CLK_FREQ * time_s)
 
     def mcu_cycles_to_sec(self, cycles):
         return float(cycles) / self.MCU_CLK_FREQ
