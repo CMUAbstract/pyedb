@@ -211,7 +211,7 @@ class McuKCyclesTimeValue(TimeValue):
     def to_edb_repr(self, edb):
         if self.edb_repr is not None:
             return self.edb_repr
-        return edb.sec_to_mcu_cycles(self.time_s) / 1000
+        return int(edb.sec_to_mcu_cycles(self.time_s) / 1000)
 
     def from_edb_repr(edb, val):
         return McuKCyclesTimeValue(edb.mcu_cycles_to_sec(val * 1000), edb_repr=val)
