@@ -770,15 +770,13 @@ class EDB:
         reply = self.receive_reply(host_comm_header.enums['USB_RSP']['VOLTAGE'])
         return reply["voltage"]
 
-    def interrupt(self):
-        """Interrupt target and enter interractive debug shell
+    def interrupt(self, power=False):
+        """Interrupt target and enter interractive debug shell on next target boot
 
-           The interrupt command first waits for target regulated voltage
-           (Vreg) to rise to a specified threshold (param target_boot_voltage),
-           and then waits for a fixed interval (param target_boot_latency) for
-           the MCU to boot and start listening for EDB signals.
+           Optionally, power the target (power disconnected upon exit from debug mode).
         """
-        self.sendCmd(host_comm_header.enums['USB_CMD']['INTERRUPT'])
+        cmd_data = [int(power)]
+        self.sendCmd(host_comm_header.enums['USB_CMD']['INTERRUPT'], cmd_data)
         reply = self.receive_reply([host_comm_header.enums['USB_RSP']['INTERRUPTED'],
                                     host_comm_header.enums['USB_RSP']['RETURN_CODE']])
 
