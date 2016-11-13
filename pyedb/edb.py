@@ -43,12 +43,10 @@ def key_lookup(d, value):
     return None
 
 def serialize_uint16(value):
-    value = int(value)
     return [value & 0xFF, (value >> 8) & 0xFF]
 
 def deserialize_uint16(bytes):
-    value = (bytes[1] << 8) | bytes[0]
-    return '%d' % value
+    return (bytes[1] << 8) | bytes[0]
 
 def serialize_frac(value):
     value = float(value)
@@ -79,6 +77,9 @@ COMPARATOR_REF_VOLTAGE = edb_iface["COMPARATOR_REF_VOLTAGE"]
 VDD = edb_iface["VDD"]
 
 class StreamInterrupted(Exception):
+    pass
+
+class TimeoutException(Exception):
     pass
 
 class InterruptContext:
@@ -215,7 +216,7 @@ class McuKCyclesTimeValue(TimeValue):
     def to_edb_repr(self, edb):
         if self.edb_repr is not None:
             return self.edb_repr
-        return edb.sec_to_mcu_cycles(self.time_s) / 1000
+        return int(edb.sec_to_mcu_cycles(self.time_s) / 1000)
 
     def from_edb_repr(edb, val):
         return McuKCyclesTimeValue(edb.mcu_cycles_to_sec(val * 1000), edb_repr=val)
@@ -670,8 +671,8 @@ class EDB:
     def cmp_to_voltage(self, value, ref):
         return (float(value) + 1) * (COMPARATOR_REF_VOLTAGE[ref] / 2**CMP_BITS)
 
-    def sec_to_mcu_cycles(time_ms):
-        return int(self.MCU_CLK_FREQ * (time_ms / 1000))
+    def sec_to_mcu_cycles(self, time_s):
+        return int(self.MCU_CLK_FREQ * time_s)
 
     def mcu_cycles_to_sec(self, cycles):
         return float(cycles) / self.MCU_CLK_FREQ
@@ -771,16 +772,18 @@ class EDB:
         reply = self.receive_reply(host_comm_header.enums['USB_RSP']['VOLTAGE'])
         return reply["voltage"]
 
-    def interrupt(self):
-        """Interrupt target and enter interractive debug shell
+    def interrupt(self, power=False):
+        """Interrupt target and enter interractive debug shell on next target boot
 
-           The interrupt command first waits for target regulated voltage
-           (Vreg) to rise to a specified threshold (param target_boot_voltage),
-           and then waits for a fixed interval (param target_boot_latency) for
-           the MCU to boot and start listening for EDB signals.
+           Optionally, power the target (power disconnected upon exit from debug mode).
         """
-        self.sendCmd(host_comm_header.enums['USB_CMD']['INTERRUPT'])
-        reply = self.receive_reply(host_comm_header.enums['USB_RSP']['INTERRUPTED'])
+        cmd_data = [int(power)]
+        self.sendCmd(host_comm_header.enums['USB_CMD']['INTERRUPT'], cmd_data)
+        reply = self.receive_reply([host_comm_header.enums['USB_RSP']['INTERRUPTED'],
+                                    host_comm_header.enums['USB_RSP']['RETURN_CODE']])
+
+        # otherwise, on failing return code, receive_reply raises exception
+        assert reply["descriptor"] == host_comm_header.enums['USB_RSP']['INTERRUPTED']
         return reply["saved_vcap"]
 
     def break_at_vcap_level(self, level, impl):
@@ -819,13 +822,15 @@ class EDB:
                      data=cmd_data)
         self.receive_reply(host_comm_header.enums['USB_RSP']['RETURN_CODE'])
 
-    def wait(self):
+    def wait(self, timeout=None):
         pkt = self.receive_reply([
             host_comm_header.enums['USB_RSP']['INTERRUPTED'],
             host_comm_header.enums['USB_RSP']['WATCHPOINT'],
             host_comm_header.enums['USB_RSP']['STDIO'],
             host_comm_header.enums['USB_RSP']['ENERGY_PROFILE']
-        ])
+        ], timeout=timeout)
+        if pkt is None:
+            raise TimeoutException()
         desc = pkt["descriptor"]
         if desc == host_comm_header.enums['USB_RSP']['INTERRUPTED']:
             return InterruptContext(pkt["interrupt_type"], pkt["interrupt_id"], pkt["saved_vcap"])
