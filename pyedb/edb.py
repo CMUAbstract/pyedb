@@ -23,6 +23,8 @@ SERIAL_PORT                         = '/dev/ttyUSB0'
 EDB_INTERFACE_FILE = os.path.join(os.path.dirname(__file__), "edb.json")
 
 REPORT_STREAM_PROGRESS_INTERVAL = 0.2 # sec
+# Number of trailing watchpoints in the stream to look at for stop pattern
+TRAILING_WP_STRING_LENGTH = 100
 
 # Packet construction states
 CONSTRUCT_STATE_IDENTIFIER          = 0x00
@@ -893,7 +895,7 @@ class EDB:
         return host_comm_header.enums['STREAM']
 
     def stream(self, streams, duration_sec=None, out_file=None, silent=True, no_parse=False,
-               stop_at_watchpoint=None):
+               stop_pattern=None):
         self.rcv_no_parse = no_parse
         self.rcv_no_parse_total_bytes = 0
 
@@ -977,6 +979,9 @@ class EDB:
             signal.signal(signal.SIGALRM, interrupt_loop)
             signal.setitimer(signal.ITIMER_REAL, duration_sec)
 
+        stop_pattern_re = re.compile(stop_pattern) if stop_pattern is not None else None
+        trailing_wp_string = ''
+
         time_started = time.time()
 
         while True:
@@ -1030,7 +1035,12 @@ class EDB:
                                     line += stream_formaters[stream](data)
 
                                     if stream == 'WATCHPOINTS':
-                                        if stop_at_watchpoint is not None and data.id == stop_at_watchpoint:
+                                        # Ideally, the regex engine would support stream input, but it doesn't,
+                                        # so, we only look at a fixed-length tail of the stream.
+                                        if len(trailing_wp_string) == TRAILING_WP_STRING_LENGTH:
+                                            trailing_wp_string = trailing_wp_string[1:]
+                                        trailing_wp_string += str(data.id)
+                                        if stop_pattern_re is not None and stop_pattern_re.match(trailing_wp_string):
                                             stop_condition = True
 
                             line += "\n"
