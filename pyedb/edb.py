@@ -131,13 +131,13 @@ class UIntValue:
     def to_edb_repr(self):
         return self.value
 
-    def from_edb_repr(val):
-        return UIntValue(self.value)
+    def from_edb_repr(edb, val):
+        return UIntValue(val)
 
     def serialize(self, edb):
         return serialize_uint16(self.to_edb_repr())
     def deserialize(edb, data):
-        return UIntValue.from_edb_repr(deserialize_uint16(data))
+        return UIntValue.from_edb_repr(edb, deserialize_uint16(data))
 
 class VoltageValue:
     """An voltage representable on the remote side (EDB)"""
